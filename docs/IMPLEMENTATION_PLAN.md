@@ -609,7 +609,8 @@ Pure functions, unit-tested. Input is all expenses and a month; first keep trans
 | `totalLent`, `lentReceived`, `lentPending` | Σ amount, type `lent`: all / received / not received |
 | `pendingSplitShares` | Σ non-self split shares not received |
 | `netAmount` | `totalSpentByMe + selfDonations + pendingDonations + othersPending + pendingSplitShares + lentPending − totalIncome` |
-| budget | `remaining = budget − netAmount`; `percentage = netAmount / budget × 100` (bar capped at 100) |
+| `budgetSpent` | `totalSpentByMe + selfDonations` (own spending only; income, lent and money owed back don't count) |
+| budget | `remaining = budget − budgetSpent`; `percentage = budgetSpent / budget × 100` (bar capped at 100) |
 | `moneyToCollect` | group by person: pending otherExpenses, pending non-self split shares (with split index), pending non-self donations, pending lent. Each group: `{ person, amount, count, items }`. Items sorted by date desc, groups by amount desc. |
 | `listTotal(rows)` | Σ type `expense` + Σ type `lent` − Σ type `income` |
 

@@ -54,7 +54,7 @@ export function MonthlySummary({
       <CardContent className="space-y-3 sm:space-y-4">
         <BudgetCard
           budget={budget?.amount ?? null}
-          spent={s.netAmount}
+          spent={s.budgetSpent}
           offline={offline}
           onSetBudget={onSetBudget}
         />

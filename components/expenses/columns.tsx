@@ -26,6 +26,8 @@ declare module '@tanstack/react-table' {
     /** Responsive visibility / alignment classes applied to both th and td. */
     className?: string;
     label?: string;
+    /** Breakpoint from which the column is displayed (hidden below it). */
+    showFrom?: 'md' | 'lg';
   }
 }
 
@@ -66,7 +68,13 @@ export function buildColumns(h: RowHandlers): ColumnDef<Expense>[] {
   return [
     col('date', {
       accessorFn: (e) => e.date.getTime(),
-      cell: ({ row }) => <span className="whitespace-nowrap">{format(row.original.date, 'MMM dd, yyyy')}</span>,
+      // Year is implied by the month picker, so phones drop it.
+      cell: ({ row }) => (
+        <span className="whitespace-nowrap">
+          <span className="sm:hidden">{format(row.original.date, 'dd MMM')}</span>
+          <span className="max-sm:hidden">{format(row.original.date, 'MMM dd, yyyy')}</span>
+        </span>
+      ),
     }),
     col('title', {
       accessorKey: 'title',
@@ -92,7 +100,7 @@ export function buildColumns(h: RowHandlers): ColumnDef<Expense>[] {
     }),
     col('paymentMode', {
       accessorKey: 'paymentMode',
-      meta: { className: 'hidden md:table-cell' },
+      meta: { className: 'hidden md:table-cell', showFrom: 'md' },
       cell: ({ row }) => <span className="text-muted-foreground">{row.original.paymentMode}</span>,
     }),
     col('forWhom', {
@@ -125,7 +133,7 @@ export function buildColumns(h: RowHandlers): ColumnDef<Expense>[] {
       },
     }),
     col('paymentStatus', {
-      meta: { className: 'hidden lg:table-cell' },
+      meta: { className: 'hidden lg:table-cell', showFrom: 'lg' },
       cell: ({ row }) => {
         const e = row.original;
         if (e.isSplit && e.splitDetails?.length) {

@@ -31,6 +31,8 @@ export interface MonthlySummary {
   lentPending: number;
   pendingSplitShares: number;
   netAmount: number;
+  /** What counts against the monthly budget: own spending + own donations. */
+  budgetSpent: number;
   moneyToCollect: MoneyToCollectGroup[];
 }
 
@@ -105,6 +107,8 @@ export function computeMonthlySummary(allExpenses: Expense[], month: Date): Mont
       totalIncome,
   );
 
+  const budgetSpent = round2(totalSpentByMe + selfDonations);
+
   const groups = new Map<string, MoneyToCollectItem[]>();
   const push = (person: string, item: MoneyToCollectItem) => {
     const list = groups.get(person);
@@ -147,6 +151,7 @@ export function computeMonthlySummary(allExpenses: Expense[], month: Date): Mont
     lentPending,
     pendingSplitShares,
     netAmount,
+    budgetSpent,
     moneyToCollect,
   };
 }

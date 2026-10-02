@@ -36,6 +36,7 @@ import { MonthPicker } from '@/components/shared/MonthPicker';
 import { Money } from '@/components/shared/Money';
 import { OfflineTooltip } from '@/components/shared/OfflineTooltip';
 import { listTotal } from '@/lib/accounting';
+import { useMediaQuery } from '@/lib/hooks/useMediaQuery';
 import {
   loadColumnVisibility,
   loadColumnWidths,
@@ -48,6 +49,7 @@ import {
   COLUMN_IDS,
   COLUMN_LABELS,
   DEFAULT_COLUMN_WIDTHS,
+  MOBILE_COLUMN_WIDTHS,
   type ColumnVisibility,
   type ColumnWidths,
 } from '@/types/table';
@@ -100,6 +102,21 @@ export function ExpenseTable(props: ExpenseTableProps) {
     setWidths(loadColumnWidths());
   }, []);
 
+  const sm = useMediaQuery('(min-width: 640px)');
+  const md = useMediaQuery('(min-width: 768px)');
+  const lg = useMediaQuery('(min-width: 1024px)');
+
+  // Phones get compact widths for any column the user has not resized.
+  const sizing = useMemo(() => {
+    const base = widths ?? DEFAULT_COLUMN_WIDTHS;
+    if (sm) return base;
+    const result = { ...base };
+    for (const id of COLUMN_IDS) {
+      if (base[id] === DEFAULT_COLUMN_WIDTHS[id]) result[id] = MOBILE_COLUMN_WIDTHS[id];
+    }
+    return result;
+  }, [widths, sm]);
+
   const columns = useMemo(
     () => buildColumns({ offline, onEdit, onDelete, onToggleReceived }),
     [offline, onEdit, onDelete, onToggleReceived],
@@ -116,7 +133,7 @@ export function ExpenseTable(props: ExpenseTableProps) {
     state: {
       expanded,
       columnVisibility: (visibility ?? undefined) as VisibilityState | undefined,
-      columnSizing: (widths ?? DEFAULT_COLUMN_WIDTHS) as ColumnSizingState,
+      columnSizing: sizing as ColumnSizingState,
     },
     onExpandedChange: setExpanded,
     onColumnVisibilityChange: (updater) => {
@@ -128,9 +145,13 @@ export function ExpenseTable(props: ExpenseTableProps) {
       });
     },
     onColumnSizingChange: (updater) => {
+      const changed = typeof updater === 'function' ? updater(sizing as ColumnSizingState) : updater;
       setWidths((prev) => {
-        const base = (prev ?? DEFAULT_COLUMN_WIDTHS) as ColumnSizingState;
-        const next = { ...DEFAULT_COLUMN_WIDTHS, ...(typeof updater === 'function' ? updater(base) : updater) };
+        // Persist only the columns actually resized, so mobile widths never leak into saved prefs.
+        const next = { ...(prev ?? DEFAULT_COLUMN_WIDTHS) };
+        for (const id of COLUMN_IDS) {
+          if (changed[id] !== undefined && changed[id] !== sizing[id]) next[id] = changed[id];
+        }
         saveColumnWidths(next);
         return next;
       });
@@ -143,6 +164,13 @@ export function ExpenseTable(props: ExpenseTableProps) {
   };
 
   const visibleColumnCount = table.getVisibleLeafColumns().length;
+  // Count only columns displayed at this breakpoint; CSS-hidden ones would otherwise
+  // inflate the table width and stretch the visible columns.
+  const shownAt = { md, lg };
+  const tableWidth = table
+    .getVisibleLeafColumns()
+    .filter((c) => !c.columnDef.meta?.showFrom || shownAt[c.columnDef.meta.showFrom])
+    .reduce((sum, c) => sum + c.getSize(), 0);
   const total = useMemo(() => listTotal(rows), [rows]);
 
   const toolbar = (
@@ -215,7 +243,7 @@ export function ExpenseTable(props: ExpenseTableProps) {
         />
       ) : (
         <>
-        <Table className="min-w-full table-fixed" style={{ width: table.getTotalSize() }}>
+        <Table className="min-w-full table-fixed" style={{ width: tableWidth }}>
           <TableHeader className="bg-muted/50">
             {table.getHeaderGroups().map((group) => (
               <TableRow key={group.id} className="hover:bg-transparent">
