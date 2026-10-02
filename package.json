@@ -12,7 +12,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:import-firestore": "tsx scripts/import-firestore.ts",
-    "db:seed": "tsx scripts/seed-dev.ts"
+    "db:seed": "tsx scripts/seed-dev.ts",
+    "typecheck:scripts": "tsc -p tsconfig.scripts.json"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -49,6 +50,7 @@
     "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "15.5.27",
+    "firebase": "^12.19.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",

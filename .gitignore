@@ -46,3 +46,6 @@ next-env.d.ts
 
 # local scratch scripts
 *.tmp.mts
+
+# import reports (contain transaction data)
+scripts/import-firestore/reports/
