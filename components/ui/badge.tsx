@@ -18,6 +18,17 @@ const badgeVariants = cva(
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // App semantic variants (plan 2.3), built on the tokens in app/globals.css.
+        expense: "border-expense/30 bg-expense/15 text-expense",
+        income: "border-income/30 bg-income/15 text-income",
+        donation: "border-donation/30 bg-donation/15 text-donation",
+        lent: "border-lent/30 bg-lent/15 text-lent",
+        received: "border-received/30 bg-received/15 text-received",
+        pending: "border-pending/30 bg-pending/15 text-pending",
+        partial: "border-partial/30 bg-partial/15 text-partial",
+        self: "border-income/30 bg-income/15 text-income",
+        person: "border-expense/30 bg-expense/15 text-expense",
+        split: "border-summary-others/30 bg-summary-others/15 text-summary-others",
       },
     },
     defaultVariants: {
