@@ -11,7 +11,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "db:import-firestore": "tsx scripts/import-firestore.ts"
+    "db:import-firestore": "tsx scripts/import-firestore.ts",
+    "db:seed": "tsx scripts/seed-dev.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { startOfMonth } from 'date-fns';
 import { toast } from 'sonner';
+import { ExpenseFiltersSheet } from '@/components/expenses/ExpenseFiltersSheet';
 import { ExpenseFormDialog } from '@/components/expenses/ExpenseFormDialog';
 import { ExpenseTable } from '@/components/expenses/ExpenseTable';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -19,7 +20,7 @@ import {
 import { useExpenses } from '@/lib/hooks/useExpenses';
 import { useOnlineStatus } from '@/lib/hooks/useOnlineStatus';
 import { useReconnect } from '@/lib/hooks/useReconnect';
-import { categorySuggestions, personSuggestions } from '@/lib/suggestions';
+import { categorySuggestions, forWhomOptions, personSuggestions } from '@/lib/suggestions';
 import type { ExpenseInput } from '@/types/dto';
 import type { Expense } from '@/types/expense';
 
@@ -45,13 +46,14 @@ export default function DashboardPage() {
 
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
   const [filters, setFilters] = useState<ExpenseFilters>(DEFAULT_FILTERS);
-  const [, setFiltersOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
   const [deleting, setDeleting] = useState<Expense | null>(null);
 
   const persons = useMemo(() => personSuggestions(expenses), [expenses]);
   const categories = useMemo(() => categorySuggestions(expenses), [expenses]);
+  const personFilterOptions = useMemo(() => forWhomOptions(expenses), [expenses]);
   const months = useMemo(() => availableMonths(expenses), [expenses]);
   const filtered = useMemo(
     () => applyFilters(expenses, currentMonth, filters),
@@ -153,6 +155,19 @@ export default function DashboardPage() {
         categorySuggestions={categories}
         offline={offline}
         onSubmit={saveExpense}
+      />
+
+      <ExpenseFiltersSheet
+        open={filtersOpen}
+        onOpenChange={setFiltersOpen}
+        filters={filters}
+        onFiltersChange={setFilters}
+        month={currentMonth}
+        months={months}
+        onMonthChange={setCurrentMonth}
+        persons={personFilterOptions}
+        categories={categories}
+        onClearAll={clearFilters}
       />
 
       <ConfirmDialog
