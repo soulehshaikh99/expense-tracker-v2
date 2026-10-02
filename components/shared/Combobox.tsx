@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Check, ChevronsUpDown, Plus } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -23,6 +23,8 @@ interface ComboboxProps {
   searchPlaceholder?: string;
   disabled?: boolean;
   invalid?: boolean;
+  /** Offer a 'Clear' item when a value is set. */
+  allowClear?: boolean;
   className?: string;
   'aria-label'?: string;
   'aria-describedby'?: string;
@@ -38,6 +40,7 @@ export function Combobox({
   searchPlaceholder = 'Type to search or add...',
   disabled,
   invalid,
+  allowClear,
   className,
   ...aria
 }: ComboboxProps) {
@@ -101,6 +104,14 @@ export function Combobox({
                 <CommandItem value={`__create__${query}`} onSelect={() => select(query)}>
                   <Plus aria-hidden="true" />
                   Use &quot;{query}&quot;
+                </CommandItem>
+              </CommandGroup>
+            )}
+            {allowClear && value && !query && (
+              <CommandGroup>
+                <CommandItem value="__clear__" onSelect={() => select('')}>
+                  <X aria-hidden="true" />
+                  Clear
                 </CommandItem>
               </CommandGroup>
             )}

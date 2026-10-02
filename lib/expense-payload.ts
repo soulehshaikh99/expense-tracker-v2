@@ -2,7 +2,7 @@ import type { Expense } from '@/types/expense';
 import type { ExpenseInput } from '@/types/dto';
 import type { ExpenseFormValues } from '@/lib/validation/expense';
 import { formatLocalDate } from './dates';
-import { canHavePaymentStatus, isSelf, normalizePerson, SPLIT } from './person';
+import { canHavePaymentStatus, isSelf, normalizePerson, SELF, SPLIT } from './person';
 import { round2 } from './utils';
 
 /**
@@ -105,4 +105,51 @@ export function normalizeExpenseInput(input: ExpenseInput, now: Date = new Date(
       : null,
     category: input.category?.trim() || null,
   };
+}
+
+/** Form values for editing an existing record. */
+export function formValuesFromExpense(e: Expense): ExpenseFormValues {
+  return {
+    transactionType: e.transactionType ?? 'expense',
+    title: e.title,
+    amount: e.amount,
+    paymentMode: e.paymentMode,
+    date: e.date,
+    forWhom: e.isSplit ? '' : e.forWhom,
+    category: e.category ?? '',
+    isSplit: !!e.isSplit,
+    splitDetails: (e.splitDetails ?? []).map((s) => ({
+      person: s.person,
+      amount: s.amount,
+      paymentReceived: !!s.paymentReceived,
+    })),
+    paymentReceived: !!e.paymentReceived,
+  };
+}
+
+/** Rows when split is turned on: Self + one empty row, total divided equally (last takes remainder). */
+export function initialSplitRows(amount: number): ExpenseFormValues['splitDetails'] {
+  const rows = [
+    { person: SELF, amount: 0, paymentReceived: false },
+    { person: '', amount: 0, paymentReceived: false },
+  ];
+  if (Number.isFinite(amount) && amount > 0) {
+    const share = round2(amount / rows.length);
+    rows.forEach((r, i) => {
+      r.amount = i === rows.length - 1 ? round2(amount - share * (rows.length - 1)) : share;
+    });
+  }
+  return rows;
+}
+
+/** Last split row amount: max(0, total − sum(other rows)). */
+export function autoLastAmount(total: number, rows: { amount: number }[]): number {
+  if (!Number.isFinite(total) || rows.length === 0) return 0;
+  const others = rows.slice(0, -1).reduce((s, r) => s + (Number.isFinite(r.amount) ? r.amount : 0), 0);
+  return Math.max(0, round2(total - others));
+}
+
+/** True when split rows hold anything worth confirming before discarding. */
+export function splitRowsHaveData(rows: { person: string; amount: number }[]): boolean {
+  return rows.some((r) => (r.person.trim() && !isSelf(r.person)) || (Number.isFinite(r.amount) && r.amount > 0));
 }
