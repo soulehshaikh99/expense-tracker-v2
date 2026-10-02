@@ -1,5 +1,6 @@
 // Edge-safe session token helpers (used by middleware, route handlers and requireSession).
-import { jwtVerify, SignJWT } from 'jose';
+import { SignJWT } from 'jose/jwt/sign';
+import { jwtVerify } from 'jose/jwt/verify';
 
 export const SESSION_COOKIE_NAME = 'auth-session';
 export const SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
