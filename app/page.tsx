@@ -3,9 +3,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import { startOfMonth } from 'date-fns';
 import { toast } from 'sonner';
+import { BudgetDialog } from '@/components/budget/BudgetDialog';
 import { ExpenseFiltersSheet } from '@/components/expenses/ExpenseFiltersSheet';
 import { ExpenseFormDialog } from '@/components/expenses/ExpenseFormDialog';
 import { ExpenseTable } from '@/components/expenses/ExpenseTable';
+import { MonthlySummary } from '@/components/summary/MonthlySummary';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { LogoutButton } from '@/components/shared/LogoutButton';
 import { OfflineBanner } from '@/components/shared/OfflineBanner';
@@ -17,11 +19,14 @@ import {
   hasActiveFilters as filtersActive,
   type ExpenseFilters,
 } from '@/lib/filters';
+import { formatMonthKey, isSameMonthAs } from '@/lib/dates';
+import { useBudgets } from '@/lib/hooks/useBudgets';
 import { useExpenses } from '@/lib/hooks/useExpenses';
 import { useOnlineStatus } from '@/lib/hooks/useOnlineStatus';
 import { useReconnect } from '@/lib/hooks/useReconnect';
 import { categorySuggestions, forWhomOptions, personSuggestions } from '@/lib/suggestions';
 import type { ExpenseInput } from '@/types/dto';
+import type { Budget } from '@/types/budget';
 import type { Expense } from '@/types/expense';
 
 /** Months that have transactions, plus the current month, newest first. */
@@ -39,9 +44,11 @@ export default function DashboardPage() {
   const offline = !online;
   const expensesApi = useExpenses();
   const { expenses, isLoading } = expensesApi;
+  const budgetsApi = useBudgets();
 
   useReconnect(online, () => {
     void expensesApi.reload();
+    void budgetsApi.reload();
   });
 
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
@@ -50,6 +57,27 @@ export default function DashboardPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
   const [deleting, setDeleting] = useState<Expense | null>(null);
+  const [budgetOpen, setBudgetOpen] = useState(false);
+
+  const currentBudget = useMemo(
+    () => budgetsApi.budgets.find((b) => isSameMonthAs(b.month, currentMonth)) ?? null,
+    [budgetsApi.budgets, currentMonth],
+  );
+
+  const saveBudget = async (amount: number) => {
+    const result = await budgetsApi.save(formatMonthKey(currentMonth), amount);
+    if (!result.ok) return false;
+    toast.success('Budget saved');
+    setBudgetOpen(false);
+    return true;
+  };
+
+  const deleteBudget = async (budget: Budget) => {
+    const result = await budgetsApi.remove(budget.id);
+    if (!result.ok) return false;
+    toast.success('Budget removed');
+    return true;
+  };
 
   const persons = useMemo(() => personSuggestions(expenses), [expenses]);
   const categories = useMemo(() => categorySuggestions(expenses), [expenses]);
@@ -144,6 +172,18 @@ export default function DashboardPage() {
               onToggleSplit={toggleSplit}
             />
           </section>
+          <aside className="min-w-0 lg:sticky lg:top-4 lg:self-start" aria-label="Monthly summary">
+            <MonthlySummary
+              expenses={expenses}
+              month={currentMonth}
+              budget={currentBudget}
+              isLoading={isLoading || budgetsApi.isLoading}
+              offline={offline}
+              onSetBudget={() => setBudgetOpen(true)}
+              onToggleReceived={toggleReceived}
+              onToggleSplit={toggleSplit}
+            />
+          </aside>
         </div>
       </main>
 
@@ -168,6 +208,16 @@ export default function DashboardPage() {
         persons={personFilterOptions}
         categories={categories}
         onClearAll={clearFilters}
+      />
+
+      <BudgetDialog
+        open={budgetOpen}
+        onOpenChange={setBudgetOpen}
+        month={currentMonth}
+        budget={currentBudget}
+        offline={offline}
+        onSave={saveBudget}
+        onDelete={deleteBudget}
       />
 
       <ConfirmDialog

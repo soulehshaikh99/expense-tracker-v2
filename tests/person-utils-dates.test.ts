@@ -49,6 +49,8 @@ describe('formatNumber', () => {
     expect(formatNumber(999.999)).toBe('1,000');
     expect(formatNumber(-2500.25)).toBe('-2,500.25');
     expect(formatMoney(1500)).toBe('₹1,500');
+    expect(formatMoney(-1158.5)).toBe('-₹1,158.50');
+    expect(formatMoney(-0.001)).toBe('₹0');
   });
 
   it('round2 tidies float sums', () => {

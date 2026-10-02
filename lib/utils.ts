@@ -6,8 +6,10 @@ export function formatNumber(value: number, decimals: number = 2): string {
   return formatted.replace(/\.00$/, '');
 }
 
+/** ₹ amount; negatives render as -₹1,234.50. */
 export function formatMoney(value: number): string {
-  return `₹${formatNumber(value)}`;
+  const sign = value < 0 && formatNumber(Math.abs(value)) !== '0' ? '-' : '';
+  return `${sign}₹${formatNumber(Math.abs(value))}`;
 }
 
 /** Round to 2 decimals to keep float sums tidy. */
