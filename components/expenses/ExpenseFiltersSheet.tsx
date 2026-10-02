@@ -15,6 +15,7 @@ import { MonthPicker } from '@/components/shared/MonthPicker';
 import { MultiSelect, type MultiSelectOption } from '@/components/shared/MultiSelect';
 import type { ExpenseFilters, PaymentStatusFilter } from '@/lib/filters';
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery';
+import { useRestoreFocus } from '@/lib/hooks/useRestoreFocus';
 import { PAYMENT_MODES, type PaymentMode, type TransactionType } from '@/types/expense';
 
 const TYPE_OPTIONS: MultiSelectOption<TransactionType>[] = [
@@ -52,12 +53,14 @@ export function ExpenseFiltersSheet({
   onClearAll,
 }: ExpenseFiltersSheetProps) {
   const desktop = useMediaQuery('(min-width: 640px)');
+  const restoreFocus = useRestoreFocus();
   const set = <K extends keyof ExpenseFilters>(key: K, value: ExpenseFilters[K]) =>
     onFiltersChange({ ...filters, [key]: value });
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
+        {...restoreFocus}
         side={desktop ? 'right' : 'bottom'}
         className="max-h-[90dvh] w-full gap-0 sm:max-h-none sm:max-w-md"
       >

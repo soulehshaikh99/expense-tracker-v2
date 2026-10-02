@@ -155,7 +155,7 @@ export function ExpenseTable(props: ExpenseTableProps) {
             Clear filters
           </Button>
         )}
-        <Button variant="outline" size="lg" onClick={onOpenFilters} aria-label="Filters">
+        <Button variant="outline" size="lg" className="min-w-10" onClick={onOpenFilters} aria-label="Filters">
           <Filter aria-hidden="true" />
           <span className="max-sm:sr-only">Filters</span>
           {activeFilterCount > 0 && (
@@ -192,7 +192,7 @@ export function ExpenseTable(props: ExpenseTableProps) {
           </DropdownMenuContent>
         </DropdownMenu>
         <OfflineTooltip offline={offline}>
-          <Button size="lg" onClick={onAdd} disabled={offline} aria-label="Add transaction">
+          <Button size="lg" className="min-w-10" onClick={onAdd} disabled={offline} aria-label="Add transaction">
             <Plus aria-hidden="true" />
             <span className="max-sm:sr-only">Add</span>
           </Button>

@@ -20,7 +20,7 @@
   --muted-foreground: oklch(0.554 0.046 257.417);
   --accent: oklch(0.968 0.007 247.896);
   --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: oklch(0.53 0.22 27.325); /* darkened from shadcn default for AA on tints */
   --border: oklch(0.929 0.013 255.508);
   --input: oklch(0.929 0.013 255.508);
   --ring: oklch(0.704 0.04 256.788);
@@ -38,15 +38,16 @@
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
 
-  /* App semantic tokens (plan 2.3) */
-  --expense: oklch(0.55 0.2 260);
-  --income: oklch(0.6 0.15 160);
-  --donation: oklch(0.6 0.2 350);
-  --lent: oklch(0.65 0.18 50);
-  --received: oklch(0.6 0.15 150);
-  --pending: oklch(0.75 0.15 75);
-  --partial: oklch(0.8 0.15 95);
-  --summary-others: oklch(0.55 0.2 300);
+  /* App semantic tokens (plan 2.3). Lightness lowered from the plan values so
+     badge text meets WCAG AA (4.5:1) on its /15 tint; hue and chroma kept. */
+  --expense: oklch(0.5 0.2 260);
+  --income: oklch(0.48 0.12 160);
+  --donation: oklch(0.5 0.19 350);
+  --lent: oklch(0.5 0.15 50);
+  --received: oklch(0.48 0.12 150);
+  --pending: oklch(0.5 0.12 75);
+  --partial: oklch(0.5 0.11 95);
+  --summary-others: oklch(0.5 0.2 300);
 }
 
 .dark {

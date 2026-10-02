@@ -18,6 +18,7 @@ import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui
 import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { OfflineTooltip } from '@/components/shared/OfflineTooltip';
+import { useRestoreFocus } from '@/lib/hooks/useRestoreFocus';
 import { budgetFormSchema, type BudgetFormValues } from '@/lib/validation/budget';
 import type { Budget } from '@/types/budget';
 
@@ -34,9 +35,10 @@ interface BudgetDialogProps {
 }
 
 export function BudgetDialog(props: BudgetDialogProps) {
+  const restoreFocus = useRestoreFocus();
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" {...restoreFocus}>
         {/* Remount per open/month/budget so the default amount is fresh. */}
         {props.open && <BudgetForm key={`${props.month.getTime()}-${props.budget?.id ?? 'new'}`} {...props} />}
       </DialogContent>
@@ -81,7 +83,6 @@ function BudgetForm({ onOpenChange, month, budget, offline, onSave, onDelete }: 
                 min="0.01"
                 placeholder="0.00"
                 className="h-10"
-                autoFocus
                 aria-invalid={!!errors.amount}
                 name={field.name}
                 ref={field.ref}
