@@ -191,6 +191,9 @@ async function main() {
   log(`| budgets | ${source.budgets.length} | ${budgets.rows.length} | ${source.budgets.length - budgets.rows.length} |`);
   log(`| expense_splits (rows) | — | ${splitCount} | — |`);
   log();
+  const utcMidnight = good.filter((g) => g.row.dateSource.rule === 'utc-midnight').length;
+  log(`Date rule used: UTC-midnight → UTC date: ${utcMidnight}; other times → ${tz} date: ${good.length - utcMidnight}.`);
+  log();
 
   issueList('Skipped (errors)', errors);
   issueList('Warnings', warnings);
