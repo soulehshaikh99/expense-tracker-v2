@@ -204,7 +204,7 @@ Summary cards use matching tinted backgrounds (`bg-<token>/10`; add a `--summary
 ## 3. UX Requirements
 
 - **Layout:** max width `1600px`, centered. Header: title "Expense Tracker", subtitle "Manage your monthly expenses", right side theme switcher + Logout button. Below `lg`: single column, summary under the table. At `lg`+: 3-column grid, table spans 2, summary spans 1 and is `sticky top-4`.
-- **Mobile first:** 16px side gutter, no horizontal page scroll (the table itself may scroll horizontally inside its container). Hide Payment Mode column below `md` and Payment Status column below `lg`. Touch targets ≥ 40px. Forms open as a `Drawer` on mobile.
+- **Mobile first:** 16px side gutter, no horizontal page scroll (the table itself may scroll horizontally inside its container). Below `sm` the table is replaced by a two-line list grouped by day; tapping a row opens a details `Drawer` with Edit/Delete, and the total bar (with Add) pins to the bottom. From `sm` up, hide Payment Mode column below `md` and Payment Status column below `lg`. Touch targets ≥ 40px. Forms open as a `Drawer` on mobile.
 - **Viewport:** `width=device-width, initialScale=1, maximumScale=1, userScalable=false`, theme color `#4f46e5`.
 - **Keyboard:** all dialogs close on `Escape` and trap focus (built into Radix). Comboboxes support arrow keys and Enter. Every interactive element is reachable by Tab and has a visible focus ring.
 - **Accessibility:** WCAG 2.1 AA contrast in both themes. Every input has a `Label`. Icon-only buttons have `aria-label` or `sr-only` text. Offline banner uses `role="alert"`.

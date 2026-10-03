@@ -37,3 +37,20 @@ export function isInMonth(date: Date, month: Date): boolean {
 export function isSameMonthAs(a: Date, b: Date): boolean {
   return startOfMonth(a).getTime() === startOfMonth(b).getTime();
 }
+
+export interface DayGroup<T> {
+  day: Date;
+  items: T[];
+}
+
+/** Group rows by calendar day, newest day first, keeping row order within a day. */
+export function groupByDay<T extends { date: Date }>(rows: T[]): DayGroup<T>[] {
+  const byDay = new Map<number, DayGroup<T>>();
+  for (const row of rows) {
+    const day = startOfDay(row.date);
+    const group = byDay.get(day.getTime());
+    if (group) group.items.push(row);
+    else byDay.set(day.getTime(), { day, items: [row] });
+  }
+  return [...byDay.values()].sort((a, b) => b.day.getTime() - a.day.getTime());
+}

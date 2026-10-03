@@ -38,13 +38,13 @@ export interface RowHandlers {
   onToggleReceived: (e: Expense, received: boolean) => void;
 }
 
-const AMOUNT_COLOR: Record<string, string> = {
+export const AMOUNT_COLOR: Record<string, string> = {
   income: 'text-income',
   lent: 'text-lent',
   donation: 'text-donation',
 };
 
-const SPLIT_STATUS = {
+export const SPLIT_STATUS = {
   received: { label: 'All Received', variant: 'received' },
   partial: { label: 'Partial', variant: 'partial' },
   pending: { label: 'Pending', variant: 'pending' },
@@ -68,13 +68,7 @@ export function buildColumns(h: RowHandlers): ColumnDef<Expense>[] {
   return [
     col('date', {
       accessorFn: (e) => e.date.getTime(),
-      // Year is implied by the month picker, so phones drop it.
-      cell: ({ row }) => (
-        <span className="whitespace-nowrap">
-          <span className="sm:hidden">{format(row.original.date, 'dd MMM')}</span>
-          <span className="max-sm:hidden">{format(row.original.date, 'MMM dd, yyyy')}</span>
-        </span>
-      ),
+      cell: ({ row }) => <span className="whitespace-nowrap">{format(row.original.date, 'MMM dd, yyyy')}</span>,
     }),
     col('title', {
       accessorKey: 'title',
@@ -172,15 +166,19 @@ export function buildColumns(h: RowHandlers): ColumnDef<Expense>[] {
     {
       id: ACTIONS_COLUMN_ID,
       header: () => <span className="sr-only">Actions</span>,
-      size: 56,
+      size: 40,
       enableHiding: false,
       enableResizing: false,
-      meta: { className: 'sticky right-0 z-10 bg-card text-right shadow-[-1px_0_0_var(--border)]' },
+      // Opaque, but tinted like the row on hover/expand so the pinned cell doesn't stand out.
+      meta: {
+        className:
+          'sticky right-0 z-10 bg-card px-1 text-center shadow-[-1px_0_0_var(--border)] group-hover/row:bg-muted-solid group-has-aria-expanded/row:bg-muted-solid',
+      },
       cell: ({ row }) => (
         <DropdownMenu>
           <OfflineTooltip offline={h.offline}>
             <DropdownMenuTrigger asChild disabled={h.offline}>
-              <Button variant="ghost" size="icon-lg" aria-label={`Actions for ${row.original.title}`}>
+              <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${row.original.title}`}>
                 <MoreHorizontal />
               </Button>
             </DropdownMenuTrigger>

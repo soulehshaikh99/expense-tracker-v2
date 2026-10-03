@@ -109,6 +109,8 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  /* Opaque equivalent of bg-muted/50 over a card, for sticky surfaces that content scrolls under. */
+  --color-muted-solid: color-mix(in oklab, var(--muted) 50%, var(--card));
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);

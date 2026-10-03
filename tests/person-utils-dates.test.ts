@@ -4,6 +4,7 @@ import { formatMoney, formatNumber, round2 } from '@/lib/utils';
 import {
   formatLocalDate,
   formatMonthKey,
+  groupByDay,
   isDateString,
   isInMonth,
   isSameMonthAs,
@@ -98,5 +99,22 @@ describe('dates', () => {
   it('isSameMonthAs', () => {
     expect(isSameMonthAs(d(2025, 3, 1), d(2025, 3, 31))).toBe(true);
     expect(isSameMonthAs(d(2025, 3, 31), d(2025, 4, 1))).toBe(false);
+  });
+});
+
+describe('groupByDay', () => {
+  it('groups by calendar day, newest first, keeping order within a day', () => {
+    const rows = [
+      { id: 'a', date: d(2025, 3, 2) },
+      { id: 'b', date: d(2025, 3, 5) },
+      { id: 'c', date: new Date(2025, 2, 2, 18, 30) },
+    ];
+    const groups = groupByDay(rows);
+    expect(groups.map((g) => g.day)).toEqual([d(2025, 3, 5), d(2025, 3, 2)]);
+    expect(groups[1].items.map((r) => r.id)).toEqual(['a', 'c']);
+  });
+
+  it('returns no groups for no rows', () => {
+    expect(groupByDay([])).toEqual([]);
   });
 });

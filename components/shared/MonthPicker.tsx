@@ -14,9 +14,11 @@ interface MonthPickerProps {
   onChange: (month: Date) => void;
   /** Months to offer in the select (any day within the month). */
   months: Date[];
+  /** Extra classes for the previous/next buttons, e.g. to hide them when space is tight. */
+  navClassName?: string;
 }
 
-export function MonthPicker({ id, value, onChange, months }: MonthPickerProps) {
+export function MonthPicker({ id, value, onChange, months, navClassName }: MonthPickerProps) {
   const options = useMemo(() => {
     const byKey = new Map<string, Date>();
     for (const m of [...months, value]) byKey.set(format(m, KEY), startOfMonth(m));
@@ -31,6 +33,7 @@ export function MonthPicker({ id, value, onChange, months }: MonthPickerProps) {
         type="button"
         variant="outline"
         size="icon-lg"
+        className={navClassName}
         aria-label="Previous month"
         onClick={() => onChange(startOfMonth(subMonths(value, 1)))}
       >
@@ -58,6 +61,7 @@ export function MonthPicker({ id, value, onChange, months }: MonthPickerProps) {
         type="button"
         variant="outline"
         size="icon-lg"
+        className={navClassName}
         aria-label="Next month"
         onClick={() => onChange(startOfMonth(addMonths(value, 1)))}
       >

@@ -49,12 +49,13 @@ import {
   COLUMN_IDS,
   COLUMN_LABELS,
   DEFAULT_COLUMN_WIDTHS,
-  MOBILE_COLUMN_WIDTHS,
   type ColumnVisibility,
   type ColumnWidths,
 } from '@/types/table';
 import { buildColumns, type RowHandlers } from './columns';
 import { EmptyState } from './EmptyState';
+import { ExpenseDetailsDrawer } from './ExpenseDetailsDrawer';
+import { ExpenseList } from './ExpenseList';
 import { SplitDetailsRow } from './SplitDetailsRow';
 
 export interface ExpenseTableProps extends RowHandlers {
@@ -106,16 +107,10 @@ export function ExpenseTable(props: ExpenseTableProps) {
   const md = useMediaQuery('(min-width: 768px)');
   const lg = useMediaQuery('(min-width: 1024px)');
 
-  // Phones get compact widths for any column the user has not resized.
-  const sizing = useMemo(() => {
-    const base = widths ?? DEFAULT_COLUMN_WIDTHS;
-    if (sm) return base;
-    const result = { ...base };
-    for (const id of COLUMN_IDS) {
-      if (base[id] === DEFAULT_COLUMN_WIDTHS[id]) result[id] = MOBILE_COLUMN_WIDTHS[id];
-    }
-    return result;
-  }, [widths, sm]);
+  const sizing = widths ?? DEFAULT_COLUMN_WIDTHS;
+  // Phones get the list layout; the table only renders from `sm` up.
+  const [detailsId, setDetailsId] = useState<string | null>(null);
+  const details = sm ? null : (rows.find((r) => r.id === detailsId) ?? null);
 
   const columns = useMemo(
     () => buildColumns({ offline, onEdit, onDelete, onToggleReceived }),
@@ -147,7 +142,7 @@ export function ExpenseTable(props: ExpenseTableProps) {
     onColumnSizingChange: (updater) => {
       const changed = typeof updater === 'function' ? updater(sizing as ColumnSizingState) : updater;
       setWidths((prev) => {
-        // Persist only the columns actually resized, so mobile widths never leak into saved prefs.
+        // Persist only the data columns actually resized.
         const next = { ...(prev ?? DEFAULT_COLUMN_WIDTHS) };
         for (const id of COLUMN_IDS) {
           if (changed[id] !== undefined && changed[id] !== sizing[id]) next[id] = changed[id];
@@ -174,13 +169,20 @@ export function ExpenseTable(props: ExpenseTableProps) {
   const total = useMemo(() => listTotal(rows), [rows]);
 
   const toolbar = (
-    <div className="flex flex-wrap items-center justify-between gap-2 border-b p-3 sm:p-4">
-      <MonthPicker value={month} onChange={onMonthChange} months={months} />
+    // Sized by its own width: as it narrows, the month arrows go first, then the Add label,
+    // then the month select drops its fixed minimum and fits its text.
+    <div className="@container flex flex-wrap items-center justify-between gap-2 border-b p-3 sm:p-4 @max-[255px]:**:data-[slot=select-trigger]:min-w-0">
+      <MonthPicker
+        value={month}
+        onChange={onMonthChange}
+        months={months}
+        navClassName="@max-[373px]:hidden"
+      />
       <div className="flex flex-wrap items-center gap-2">
         {hasActiveFilters && (
-          <Button variant="ghost" size="lg" onClick={onClearFilters}>
+          <Button variant="ghost" size="lg" className="min-w-10" onClick={onClearFilters}>
             <X aria-hidden="true" />
-            Clear filters
+            <span className="max-sm:sr-only">Clear filters</span>
           </Button>
         )}
         <Button variant="outline" size="lg" className="min-w-10" onClick={onOpenFilters} aria-label="Filters">
@@ -194,7 +196,7 @@ export function ExpenseTable(props: ExpenseTableProps) {
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon-lg" aria-label="Column visibility">
+            <Button variant="outline" size="icon-lg" className="max-sm:hidden" aria-label="Column visibility">
               <Columns3 />
             </Button>
           </DropdownMenuTrigger>
@@ -222,7 +224,7 @@ export function ExpenseTable(props: ExpenseTableProps) {
         <OfflineTooltip offline={offline}>
           <Button size="lg" className="min-w-10" onClick={onAdd} disabled={offline} aria-label="Add transaction">
             <Plus aria-hidden="true" />
-            <span className="max-sm:sr-only">Add</span>
+            <span className="@max-[285px]:sr-only">Add</span>
           </Button>
         </OfflineTooltip>
       </div>
@@ -232,7 +234,8 @@ export function ExpenseTable(props: ExpenseTableProps) {
   if (isLoading) return <ExpenseTableSkeleton />;
 
   return (
-    <Card className="gap-0 overflow-hidden py-0">
+    // overflow-clip, not -hidden: a scroll container would break the sticky day headers and total bar.
+    <Card className="gap-0 overflow-clip py-0">
       {toolbar}
       {rows.length === 0 ? (
         <EmptyState
@@ -243,15 +246,24 @@ export function ExpenseTable(props: ExpenseTableProps) {
         />
       ) : (
         <>
+        {!sm ? (
+          <ExpenseList rows={rows} offline={offline} onOpen={(e) => setDetailsId(e.id)} onToggleSplit={onToggleSplit} />
+        ) : (
         <Table className="min-w-full table-fixed" style={{ width: tableWidth }}>
-          <TableHeader className="bg-muted/50">
+          <TableHeader>
             {table.getHeaderGroups().map((group) => (
               <TableRow key={group.id} className="hover:bg-transparent">
                 {group.headers.map((header) => (
                   <TableHead
                     key={header.id}
                     style={{ width: header.getSize() }}
-                    className={cn('relative h-11 px-3', header.column.columnDef.meta?.className)}
+                    // Labels wrap so narrow columns don't spill into neighbours; the opaque
+                    // tint keeps the sticky actions header matching the rest of the row.
+                    className={cn(
+                      'relative h-11 px-3 leading-tight wrap-break-word whitespace-normal',
+                      header.column.columnDef.meta?.className,
+                      'bg-muted-solid',
+                    )}
                   >
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     {header.column.getCanResize() && (
@@ -276,7 +288,7 @@ export function ExpenseTable(props: ExpenseTableProps) {
           <TableBody>
             {table.getRowModel().rows.map((row) => (
               <Fragment key={row.id}>
-                <TableRow data-state={row.getIsExpanded() ? 'expanded' : undefined}>
+                <TableRow className="group/row" data-state={row.getIsExpanded() ? 'expanded' : undefined}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
@@ -299,10 +311,21 @@ export function ExpenseTable(props: ExpenseTableProps) {
             ))}
           </TableBody>
         </Table>
-        <div className="flex items-center justify-between border-t bg-muted/50 px-3 py-3">
+        )}
+        {/* Pinned to the viewport bottom on phones while the list is on screen. */}
+        <div className="flex items-center justify-between gap-3 border-t bg-muted-solid px-3 py-3 max-sm:sticky max-sm:bottom-0 max-sm:z-20 max-sm:px-4 max-sm:pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <span className="text-sm text-muted-foreground">Total:</span>
           <Money value={total} className="text-base font-semibold sm:text-lg" />
         </div>
+        <ExpenseDetailsDrawer
+          expense={details}
+          onClose={() => setDetailsId(null)}
+          offline={offline}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onToggleReceived={onToggleReceived}
+          onToggleSplit={onToggleSplit}
+        />
         </>
       )}
     </Card>

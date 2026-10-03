@@ -43,17 +43,6 @@ export const DEFAULT_COLUMN_WIDTHS: ColumnWidths = {
   category: 150,
 };
 
-/** Used below the `sm` breakpoint for columns the user has not resized. */
-export const MOBILE_COLUMN_WIDTHS: ColumnWidths = {
-  date: 76,
-  title: 150,
-  amount: 96,
-  paymentMode: 110,
-  forWhom: 104,
-  paymentStatus: 130,
-  category: 96,
-};
-
 export const COLUMN_LABELS: Record<ColumnId, string> = {
   date: 'Date',
   title: 'Title',
