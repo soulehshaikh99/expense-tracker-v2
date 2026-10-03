@@ -1,15 +1,15 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useFieldArray, useWatch, type Control, type FieldErrors, type UseFormSetValue } from 'react-hook-form';
-import { Plus, Trash2 } from 'lucide-react';
+import { Divide, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Combobox } from '@/components/shared/Combobox';
-import { autoLastAmount } from '@/lib/expense-payload';
+import { autoBalanceAmount, equalSplitAmounts } from '@/lib/expense-payload';
 import { isSelf, SELF } from '@/lib/person';
 import { formatNumber } from '@/lib/utils';
 import type { ExpenseFormValues } from '@/lib/validation/expense';
@@ -35,15 +35,25 @@ export function SplitEditor({
   const total = useWatch({ control, name: 'amount' });
   const rows = useWatch({ control, name: 'splitDetails' });
 
-  // Keep the last row equal to max(0, total − sum(other rows)).
-  const lastIndex = rows.length - 1;
-  const expectedLast = autoLastAmount(total, rows);
-  const currentLast = rows[lastIndex]?.amount;
+  // One row is the balance row: max(0, total − sum(other rows)). Defaults to Self, so
+  // entering what others owe fills in your own share; any row can be picked instead.
+  const [balanceId, setBalanceId] = useState<string | null>(null);
+  const pickedIndex = fields.findIndex((f) => f.id === balanceId);
+  const selfIndex = rows.findIndex((r) => isSelf(r.person));
+  const balanceIndex = pickedIndex >= 0 ? pickedIndex : selfIndex >= 0 ? selfIndex : rows.length - 1;
+  const expectedBalance = autoBalanceAmount(total, rows, balanceIndex);
+  const currentBalance = rows[balanceIndex]?.amount;
   useEffect(() => {
-    if (lastIndex >= 1 && currentLast !== expectedLast) {
-      setValue(`splitDetails.${lastIndex}.amount`, expectedLast, { shouldValidate: false });
+    if (rows.length >= 2 && currentBalance !== expectedBalance) {
+      setValue(`splitDetails.${balanceIndex}.amount`, expectedBalance, { shouldValidate: false });
     }
-  }, [lastIndex, currentLast, expectedLast, setValue]);
+  }, [rows.length, balanceIndex, currentBalance, expectedBalance, setValue]);
+
+  const splitEqually = () => {
+    equalSplitAmounts(total, rows.length, balanceIndex).forEach((amount, i) =>
+      setValue(`splitDetails.${i}.amount`, amount, { shouldValidate: !!errors.splitDetails }),
+    );
+  };
 
   const sum = rows.reduce((s, r) => s + (Number.isFinite(r.amount) ? r.amount : 0), 0);
   const rootError = errors.splitDetails?.root?.message ?? errors.splitDetails?.message;
@@ -62,7 +72,7 @@ export function SplitEditor({
       {fields.map((field, index) => {
         const row = rows[index];
         const self = isSelf(row?.person);
-        const isLast = index === fields.length - 1;
+        const isBalance = index === balanceIndex;
         const rowErrors = errors.splitDetails?.[index];
         const personId = `split-person-${index}`;
         const amountId = `split-amount-${index}`;
@@ -88,10 +98,25 @@ export function SplitEditor({
                 />
                 <FieldError errors={[rowErrors?.person]} />
               </Field>
-              <Field className="w-28 shrink-0 gap-1.5" data-invalid={!!rowErrors?.amount}>
-                <FieldLabel htmlFor={amountId} className="text-xs text-muted-foreground">
-                  Amount {isLast && '(Auto)'}
-                </FieldLabel>
+              <Field className="w-32 shrink-0 gap-1.5" data-invalid={!!rowErrors?.amount}>
+                <div className="flex items-center justify-between gap-1">
+                  <FieldLabel htmlFor={amountId} className="text-xs text-muted-foreground">
+                    Amount
+                  </FieldLabel>
+                  <button
+                    type="button"
+                    aria-pressed={isBalance}
+                    title={isBalance ? 'Calculated from the total' : 'Calculate this share from the total'}
+                    className={
+                      isBalance
+                        ? 'rounded-full bg-primary px-1.5 text-[10px] font-medium leading-4 text-primary-foreground'
+                        : 'rounded-full border px-1.5 text-[10px] leading-4 text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                    }
+                    onClick={() => setBalanceId(field.id)}
+                  >
+                    Auto
+                  </button>
+                </div>
                 <Input
                   id={amountId}
                   type="number"
@@ -99,9 +124,9 @@ export function SplitEditor({
                   step="0.01"
                   min="0"
                   placeholder="0.00"
-                  className="h-10"
-                  readOnly={isLast}
-                  aria-readonly={isLast}
+                  className={isBalance ? 'h-10 bg-muted' : 'h-10'}
+                  readOnly={isBalance}
+                  aria-readonly={isBalance}
                   aria-invalid={!!rowErrors?.amount}
                   value={Number.isFinite(row?.amount) ? row.amount : ''}
                   onChange={(e) =>
@@ -144,18 +169,28 @@ export function SplitEditor({
         );
       })}
 
-      <Button
-        type="button"
-        variant="outline"
-        className="h-10 w-full"
-        onClick={() => append({ person: '', amount: 0, paymentReceived: false })}
-      >
-        <Plus aria-hidden="true" />
-        Add Person
-      </Button>
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10"
+          onClick={() => append({ person: '', amount: 0, paymentReceived: false })}
+        >
+          <Plus aria-hidden="true" />
+          Add Person
+        </Button>
+        <Button type="button" variant="outline" className="h-10" onClick={splitEqually}>
+          <Divide aria-hidden="true" />
+          Split Equally
+        </Button>
+      </div>
 
       <p className="border-t pt-2 text-xs text-muted-foreground tabular-nums">
         Total: ₹{formatNumber(Number.isFinite(total) ? total : 0)} | Split Sum: ₹{formatNumber(sum)}
+      </p>
+      <p className="-mt-2 text-xs text-muted-foreground">
+        The <span className="font-medium">Auto</span> share is the total minus everyone else. Tap Auto on another row to
+        calculate that one instead.
       </p>
       {rootError && (
         <p role="alert" className="text-sm text-destructive">

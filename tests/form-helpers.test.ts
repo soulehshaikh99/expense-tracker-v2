@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  autoLastAmount,
+  autoBalanceAmount,
+  equalSplitAmounts,
   formValuesFromExpense,
   initialSplitRows,
   splitRowsHaveData,
@@ -18,11 +19,23 @@ describe('split form helpers', () => {
     expect(initialSplitRows(300).map((r) => r.amount)).toEqual([150, 150]);
   });
 
-  it('auto-calculates the last row, never negative', () => {
-    expect(autoLastAmount(300, [{ amount: 100 }, { amount: 50 }, { amount: 0 }])).toBe(150);
-    expect(autoLastAmount(100, [{ amount: 150 }, { amount: 0 }])).toBe(0);
-    expect(autoLastAmount(Number.NaN, [{ amount: 1 }, { amount: 0 }])).toBe(0);
-    expect(autoLastAmount(10, [{ amount: Number.NaN }, { amount: 0 }])).toBe(10);
+  it('auto-calculates the balance row, never negative', () => {
+    expect(autoBalanceAmount(300, [{ amount: 100 }, { amount: 50 }, { amount: 0 }], 2)).toBe(150);
+    expect(autoBalanceAmount(100, [{ amount: 150 }, { amount: 0 }], 1)).toBe(0);
+    expect(autoBalanceAmount(Number.NaN, [{ amount: 1 }, { amount: 0 }], 1)).toBe(0);
+    expect(autoBalanceAmount(10, [{ amount: Number.NaN }, { amount: 0 }], 1)).toBe(10);
+  });
+
+  it('auto-calculates Self when only the other shares are known', () => {
+    expect(autoBalanceAmount(500, [{ amount: 0 }, { amount: 180 }], 0)).toBe(320);
+    expect(autoBalanceAmount(500, [{ amount: 999 }, { amount: 180 }, { amount: 120 }], 0)).toBe(200);
+    expect(autoBalanceAmount(500, [{ amount: 0 }], 3)).toBe(0);
+  });
+
+  it('splits equally with the remainder on the balance row', () => {
+    expect(equalSplitAmounts(100, 3, 0)).toEqual([33.34, 33.33, 33.33]);
+    expect(equalSplitAmounts(100, 3, 2)).toEqual([33.33, 33.33, 33.34]);
+    expect(equalSplitAmounts(Number.NaN, 2, 0)).toEqual([0, 0]);
   });
 
   it('detects split data worth confirming', () => {

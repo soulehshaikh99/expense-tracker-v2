@@ -142,11 +142,25 @@ export function initialSplitRows(amount: number): ExpenseFormValues['splitDetail
   return rows;
 }
 
-/** Last split row amount: max(0, total − sum(other rows)). */
-export function autoLastAmount(total: number, rows: { amount: number }[]): number {
-  if (!Number.isFinite(total) || rows.length === 0) return 0;
-  const others = rows.slice(0, -1).reduce((s, r) => s + (Number.isFinite(r.amount) ? r.amount : 0), 0);
+/** Balance row amount: max(0, total − sum(every other row)). */
+export function autoBalanceAmount(total: number, rows: { amount: number }[], balanceIndex: number): number {
+  if (!Number.isFinite(total) || balanceIndex < 0 || balanceIndex >= rows.length) return 0;
+  const others = rows.reduce(
+    (s, r, i) => (i === balanceIndex || !Number.isFinite(r.amount) ? s : s + r.amount),
+    0,
+  );
   return Math.max(0, round2(total - others));
+}
+
+/** Equal shares of total across count rows; the balance row absorbs the rounding remainder. */
+export function equalSplitAmounts(total: number, count: number, balanceIndex: number): number[] {
+  if (!Number.isFinite(total) || total <= 0 || count <= 0) return Array(Math.max(count, 0)).fill(0);
+  const share = round2(total / count);
+  const amounts = Array<number>(count).fill(share);
+  if (balanceIndex >= 0 && balanceIndex < count) {
+    amounts[balanceIndex] = round2(total - share * (count - 1));
+  }
+  return amounts;
 }
 
 /** True when split rows hold anything worth confirming before discarding. */
