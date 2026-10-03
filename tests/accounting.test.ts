@@ -109,8 +109,8 @@ describe('computeMonthlySummary', () => {
     expect(s.totalSpentByMe).toBe(1030);
     expect(s.pendingSplitShares).toBe(30);
     expect(s.netAmount).toBe(1030 + 40 + 60 + 200 + 30 + 500 - 300);
-    // budget ignores income, lent and money owed back
-    expect(s.budgetSpent).toBe(1030 + 40);
+    // budget offsets income; ignores lent and money owed back
+    expect(s.budgetSpent).toBe(1030 + 40 - 300);
   });
 
   it('groups money to collect by person, sorted by amount and date', () => {

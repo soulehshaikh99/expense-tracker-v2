@@ -107,7 +107,7 @@ export function computeMonthlySummary(allExpenses: Expense[], month: Date): Mont
       totalIncome,
   );
 
-  const budgetSpent = round2(totalSpentByMe + selfDonations);
+  const budgetSpent = round2(totalSpentByMe + selfDonations - totalIncome);
 
   const groups = new Map<string, MoneyToCollectItem[]>();
   const push = (person: string, item: MoneyToCollectItem) => {
